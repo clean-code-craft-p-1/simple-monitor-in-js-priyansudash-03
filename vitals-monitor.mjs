@@ -1,31 +1,38 @@
+function isVitalInRange(value, min, max) {
+  return value >= min && value <= max;
+}
 
-export async function vitalsOk(temperature, pulseRate, spo2) {
-  if (temperature > 102 || temperature < 95) {
-    console.log("Temperature is critical!");
+function getVitalStatus(temperature, pulseRate, spo2) {
+  const issues = [];
+  if (!isVitalInRange(temperature, 95, 102)) {
+    issues.push("Temperature is critical!");
+  }
+  if (!isVitalInRange(pulseRate, 60, 100)) {
+    issues.push("Pulse Rate is out of range!");
+  }
+  if (!isVitalInRange(spo2, 90, Infinity)) {
+    issues.push("Oxygen Saturation out of range!");
+  }
+  return issues;
+}
+
+async function alert(messages, testMode = false) {
+  for (const message of messages) {
+    console.log(message);
+    const delay = testMode ? 10 : 1000; // Use 10ms delay in test mode, 1000ms otherwise
     for (let i = 0; i < 6; i++) {
       process.stdout.write("\r* ");
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, delay));
       process.stdout.write("\r *");
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-    return false;
-  } else if (pulseRate < 60 || pulseRate > 100) {
-    console.log("Pulse Rate is out of range!");
-    for (let i = 0; i < 6; i++) {
-      process.stdout.write("\r* ");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      process.stdout.write("\r *");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    return false;
-  } else if (spo2 < 90) {
-    console.log("Oxygen Saturation out of range!");
-    for (let i = 0; i < 6; i++) {
-      process.stdout.write("\r* ");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      process.stdout.write("\r *");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
+  }
+}
+
+export async function vitalsOk(temperature, pulseRate, spo2, testMode = false) {
+  const issues = getVitalStatus(temperature, pulseRate, spo2);
+  if (issues.length > 0) {
+    await alert(issues, testMode); // Pass testMode to alert
     return false;
   }
   return true;
