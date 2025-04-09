@@ -3,29 +3,31 @@ function isVitalInRange(value, min, max) {
 }
 
 function getVitalStatus(temperature, pulseRate, spo2) {
-  const issues = [];
-  if (!isVitalInRange(temperature, 95, 102)) {
-    issues.push("Temperature is critical!");
+  const vitalChecks = [
+    { value: temperature, min: 95, max: 102, message: "Temperature is critical!" },
+    { value: pulseRate, min: 60, max: 100, message: "Pulse Rate is out of range!" },
+    { value: spo2, min: 90, max: Infinity, message: "Oxygen Saturation out of range!" },
+  ];
+
+  return vitalChecks
+    .filter(vital => !isVitalInRange(vital.value, vital.min, vital.max))
+    .map(vital => vital.message);
+}
+
+async function blink(times, delay) {
+  for (let i = 0; i < times; i++) {
+    process.stdout.write("\r* ");
+    await new Promise(resolve => setTimeout(resolve, delay));
+    process.stdout.write("\r *");
+    await new Promise(resolve => setTimeout(resolve, delay));
   }
-  if (!isVitalInRange(pulseRate, 60, 100)) {
-    issues.push("Pulse Rate is out of range!");
-  }
-  if (!isVitalInRange(spo2, 90, Infinity)) {
-    issues.push("Oxygen Saturation out of range!");
-  }
-  return issues;
 }
 
 async function alert(messages, testMode = false) {
+  const delay = testMode ? 10 : 1000; // Use 10ms delay in test mode, 1000ms otherwise
   for (const message of messages) {
     console.log(message);
-    const delay = testMode ? 10 : 1000; // Use 10ms delay in test mode, 1000ms otherwise
-    for (let i = 0; i < 6; i++) {
-      process.stdout.write("\r* ");
-      await new Promise(resolve => setTimeout(resolve, delay));
-      process.stdout.write("\r *");
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
+    await blink(6, delay);
   }
 }
 
